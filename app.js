@@ -302,7 +302,7 @@ function applyOcr(result, warn, typed) {
   rowsEl.forEach(r => { const t = typed[r.dataset.name]; if (t) { r.querySelector('.sg').value = t.g; r.querySelector('.sh').value = t.h; r.querySelector('.sg').dispatchEvent(new Event('input')); } });
   const box = document.getElementById('ocrResult');
   if (!box) return;
-  if (!result) { box.innerHTML = `<div class="ocr">사진은 저장했어요.${warn ? `<div class="note">자동 인식은 못 했어요: ${esc(warn)}</div>` : ''}</div>`; return; }
+  if (!result) { box.innerHTML = `<div class="ocr">사진을 저장했어요. 타수는 아래 칸에 입력해 주세요.${warn ? `<div class="note">자동 인식은 못 했어요: ${esc(warn)}</div>` : ''}</div>`; return; }
   const norm = s => String(s || '').replace(/\s/g, '');
   let filled = 0;
   const lines = (result.players || []).map(p => {
@@ -787,7 +787,7 @@ function adminScores(days) {
   const photoOf = g => (data.photos || []).find(p => String(p.day) === String(scoreDay) && p.group === g);
   return `<div class="seg">${days.map(d => `<button data-sd="${d.n}" class="${String(scoreDay) === String(d.n) ? 'on' : ''}">${d.n}일차</button>`).join('')}</div>
     <section class="card"><h3>📷 스마트스코어 사진</h3>
-      <div class="note" style="margin:2px 0 10px">조별 스코어카드 캡처를 올리면 타수를 자동으로 읽어 아래 칸에 채워요. 확인한 뒤 저장을 눌러 주세요.</div>
+      <div class="note" style="margin:2px 0 10px">조별 스코어카드 캡처를 올려 두면 스코어 → 종합에서 일자별로 볼 수 있어요. 타수는 아래 칸에 입력해 주세요.</div>
       <div class="photo-slots">${pGroups.map(g => { const p = photoOf(g); return `<div class="pslot">${p ? `<img src="${photoUrl(p.fileId, 400)}" alt="${esc(g)} 스코어카드">` : '<div class="pempty">사진 없음</div>'}<label class="btn small ghost">${p ? esc(g) + ' 다시 올리기' : esc(g) + ' 사진 올리기'}<input type="file" accept="image/*" data-upload="${esc(g)}" hidden></label></div>`; }).join('')}</div>
       <div id="ocrResult"></div>
     </section>
@@ -878,7 +878,7 @@ function bindAdmin() {
     const typed = {};
     v.querySelectorAll('.scorein').forEach(r => { typed[r.dataset.name] = { g: r.querySelector('.sg').value, h: r.querySelector('.sh').value }; });
     const box = document.getElementById('ocrResult');
-    if (box) box.innerHTML = '<div class="ocr">⏳ 사진을 올리고 타수를 읽는 중이에요… (30초쯤 걸려요)</div>';
+    if (box) box.innerHTML = '<div class="ocr">⏳ 사진을 올리는 중이에요…</div>';
     v.querySelectorAll('[data-upload]').forEach(x => { x.disabled = true; });
     try {
       const b64 = await imageToJpegB64(file, 2000);
