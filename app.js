@@ -87,7 +87,11 @@ function tripDays(S) {
 function dayResults(data, day) {
   const rows = (data.scores || [])
     .filter(s => String(s.day) === String(day) && has(s.gross) && num(s.gross) > 0)
-    .map(s => ({ name: s.name, gross: num(s.gross), hcp: num(s.hcp), net: num(s.gross) - num(s.hcp) }));
+    .map(s => {
+      const m = (data.members || []).find(x => x.name === s.name);
+      const hcp = m ? num(m.hcp) : num(s.hcp); // 핸디는 항상 멤버·회비의 현재 핸디
+      return { name: s.name, gross: num(s.gross), hcp, net: num(s.gross) - hcp };
+    });
   rows.sort((a, b) => a.net - b.net || a.gross - b.gross);
   rows.forEach((r, i) => { r.rank = i > 0 && rows[i - 1].net === r.net ? rows[i - 1].rank : i + 1; });
   const best = rows.length ? Math.min(...rows.map(r => r.gross)) : null;
@@ -208,7 +212,7 @@ async function loadData(showSpin) {
       const saved = store.get(DEMO_KEY);
       data = normalize(saved ? JSON.parse(saved) : seedData());
     } else {
-      const res = await fetch(API + (API.includes('?') ? '&' : '?') + 't=' + Date.now());
+      const res = await fetch(API + (API.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' });
       const j = await res.json();
       if (!j.ok) throw new Error(j.error || '불러오기 실패');
       data = normalize(j.data);
@@ -817,15 +821,15 @@ function adminScores(days) {
         const e = existing[n];
         const d = (scoreDraft[scoreDay] || {})[n];
         const g = d ? d.g : (e ? e.gross : '');
-        const h = d && has(d.h) ? num(d.h) : (e && has(e.hcp) ? num(e.hcp) : memHcp(n));
+        const h = memHcp(n); // 핸디는 멤버·회비에서 수정
         return `<div class="scorein" data-name="${esc(n)}" style="grid-template-columns:1fr 64px 52px 64px">
           <div><b>${esc(n)}</b>${groupOf[n] ? ` <span class="chip gray">${esc(groupOf[n])}</span>` : ' <span class="chip gray">불참?</span>'}</div>
           <input class="inp sg" inputmode="numeric" value="${esc(g)}" placeholder="-">
-          <input class="inp sh" inputmode="numeric" value="${esc(h)}">
+          <input class="inp sh" value="${esc(h)}" readonly tabindex="-1" aria-label="핸디 (멤버·회비에서 수정)">
           <div class="nt">${has(g) ? num(g) - h : '-'}</div>
         </div>`;
       }).join('')}
-      <div class="note">타수를 비워 두면 그 라운드는 순위에서 빠져요(불참). 핸디는 멤버 핸디가 기본으로 들어가고, 이 라운드만 바꿀 수도 있어요.</div>
+      <div class="note">타수를 비워 두면 그 라운드는 순위에서 빠져요(불참). 핸디는 관리자 → 멤버·회비에서 정한 핸디가 자동으로 적용돼요.</div>
     </section>
     <div class="savebar"><button class="btn block" id="saveScores">${scoreDay}일차 스코어 저장</button><button class="btn block danger" id="resetScores" style="margin-top:8px">${scoreDay}일차 스코어 초기화</button></div>`;
 }
@@ -1002,5 +1006,9 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && !d
 loadNav();
 const cached = store.get(CACHE_KEY);
 if (!DEMO && cached) { try { data = normalize(JSON.parse(cached)); render(); } catch (e) { /* 무시 */ } }
-loadData(false);
+loadData(true);
+// 화면을 켜 둔 동안 1분마다 최신 데이터로 갱신 (관리자 입력 중에는 건너뜀)
+setInterval(() => { if (!DEMO && !document.hidden && !dirty && tab !== 'admin') loadData(false); }, 60000);
+// 뒤로가기 등으로 예전 화면이 되살아나도 최신 데이터 다시 불러오기
+window.addEventListener('pageshow', e => { if (e.persisted && !DEMO) loadData(false); });
 })();
