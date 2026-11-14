@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#14532d">
+<meta name="theme-color" content="#F4F6F8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="골프여행">
@@ -13,34 +13,40 @@
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f3f5f1; --card:#ffffff; --ink:#17221b; --muted:#68756c; --line:#e1e6df;
-  --brand:#166534; --brand-2:#15803d; --brand-soft:#e3f1e7; --brand-ink:#ffffff;
-  --gold:#b7791f; --gold-soft:#fbf1dc; --silver:#6b7280; --bronze:#9a5b2b;
-  --danger:#c2410c; --danger-soft:#fdeee5; --info:#1d4ed8; --info-soft:#e6edfd;
-  --shadow:0 1px 2px rgba(16,40,24,.06),0 4px 14px rgba(16,40,24,.06);
-  --radius:16px;
-  --today-bg:#eef8f0;
+  --bg:#F4F6F8; --card:#FFFFFF; --ink:#0B1B2B; --muted:#5B6B7A; --line:#E6EAEE; --chip:#EEF1F4;
+  --brand:#087443; --brand-2:#12B76A; --brand-soft:#E6F6EE; --brand-ink:#062B1A;
+  --accent:#12B76A; --accent-ink:#062B1A; --accent-strong:#0E9F5D; --mint:#3DDC97; --navy:#0B1B2B;
+  --gold:#B7791F; --gold-soft:#FBF1DC; --silver:#6B7280; --bronze:#9A5B2B;
+  --danger:#C2410C; --danger-soft:#FDEEE5; --info:#2E6BE6; --info-soft:#EAF1FD; --on-info:#FFFFFF;
+  --shadow:0 1px 2px rgba(11,27,43,.04),0 6px 18px rgba(11,27,43,.06);
+  --radius:20px;
+  --today-bg:#EEF9F3;
+  --num:"Barlow Condensed","Noto Sans KR",sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0e1511; --card:#17211b; --ink:#e7eee9; --muted:#93a198; --line:#26332b;
-    --brand:#22c55e; --brand-2:#4ade80; --brand-soft:#173323; --brand-ink:#06210f;
-    --gold:#f2b544; --gold-soft:#3a2d12; --silver:#a5adb8; --bronze:#d08a52;
-    --danger:#fb8a5a; --danger-soft:#3b1d12; --info:#7aa2ff; --info-soft:#18233f;
-    --shadow:0 1px 2px rgba(0,0,0,.3);
-    --today-bg:#1b2c22;
+    --bg:#0B131A; --card:#15212C; --ink:#E8EEF3; --muted:#93A3B1; --line:#22303C; --chip:#1D2A36;
+    --brand:#3DDC97; --brand-2:#12B76A; --brand-soft:#123326; --brand-ink:#062B1A;
+    --accent:#12B76A; --accent-ink:#062B1A; --accent-strong:#3DDC97; --mint:#3DDC97; --navy:#1B3247;
+    --gold:#F2B544; --gold-soft:#3A2D12; --silver:#A5ADB8; --bronze:#D08A52;
+    --danger:#FB8A5A; --danger-soft:#3B1D12; --info:#7AA2FF; --info-soft:#18233F; --on-info:#0B131A;
+    --shadow:0 1px 2px rgba(0,0,0,.35);
+    --today-bg:#12291F;
+    color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0e1511; --card:#17211b; --ink:#e7eee9; --muted:#93a198; --line:#26332b;
-  --brand:#22c55e; --brand-2:#4ade80; --brand-soft:#173323; --brand-ink:#06210f;
-  --gold:#f2b544; --gold-soft:#3a2d12; --silver:#a5adb8; --bronze:#d08a52;
-  --danger:#fb8a5a; --danger-soft:#3b1d12; --info:#7aa2ff; --info-soft:#18233f;
-  --shadow:0 1px 2px rgba(0,0,0,.3);
-  --today-bg:#1b2c22;
+  --bg:#0B131A; --card:#15212C; --ink:#E8EEF3; --muted:#93A3B1; --line:#22303C; --chip:#1D2A36;
+  --brand:#3DDC97; --brand-2:#12B76A; --brand-soft:#123326; --brand-ink:#062B1A;
+  --accent:#12B76A; --accent-ink:#062B1A; --accent-strong:#3DDC97; --mint:#3DDC97; --navy:#1B3247;
+  --gold:#F2B544; --gold-soft:#3A2D12; --silver:#A5ADB8; --bronze:#D08A52;
+  --danger:#FB8A5A; --danger-soft:#3B1D12; --info:#7AA2FF; --info-soft:#18233F; --on-info:#0B131A;
+  --shadow:0 1px 2px rgba(0,0,0,.35);
+  --today-bg:#12291F;
+  color-scheme:dark;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
@@ -230,18 +236,112 @@ textarea.inp{min-height:70px;resize:vertical}
 .modal{position:fixed;inset:0;background:rgba(8,16,11,.5);display:grid;place-items:center;z-index:60;padding:16px}
 .modal .box{background:var(--card);border-radius:18px;padding:18px;width:100%;max-width:340px;box-shadow:var(--shadow)}
 .modal p{margin:2px 0 16px;font-size:15.5px;font-weight:500}
+
+/* ===== 테마: B 페어웨이 스포츠 ===== */
+body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+table.rank td:not(.nm),.tl .t,.group .tee,.tc-group .tee,.medal,.money-hero .big,.stat b,.list .r,.catbar b,.scorein .nt,.pod span,.fee{font-family:var(--num)}
+
+/* 상단 */
+.hero{background:transparent;color:var(--ink);padding:calc(18px + env(safe-area-inset-top)) 0 4px}
+.hero .top{display:flex;align-items:center;justify-content:space-between;text-align:left;padding:0}
+.hero h1{font-size:17px;gap:6px;letter-spacing:-.3px}
+.hero h1 svg{width:22px;height:22px}
+.iconbtn{background:var(--card);color:var(--ink);width:40px;height:40px;border-radius:12px;box-shadow:var(--shadow)}
+.hero-main{display:flex;align-items:flex-end;gap:12px;margin-top:10px}
+.hero .dday{display:block;background:none;padding:0;margin:0;border-radius:0;font-family:var(--num);font-size:64px;font-weight:800;line-height:.85;color:var(--accent-strong);letter-spacing:-1px;white-space:nowrap}
+.hero .sub{opacity:1;color:var(--muted);font-size:13px;line-height:1.45;margin:0;padding-bottom:3px}
+#heroExtra{text-align:left}
+.notice{background:var(--card);color:var(--ink);box-shadow:var(--shadow);border-radius:14px}
+
+/* 카드·칩 */
+.card{border:0;border-radius:var(--radius);box-shadow:var(--shadow)}
+.today{outline:2px solid var(--accent);outline-offset:-2px;background:var(--today-bg)}
+.chip.gray{background:var(--chip);color:var(--muted)}
+.sect-title{color:var(--ink);font-size:14px;font-weight:900}
+
+/* 탭(세그먼트)·버튼 */
+.seg button{border:0;background:var(--card);box-shadow:var(--shadow);border-radius:12px;color:var(--muted)}
+.seg button.on{background:var(--navy);color:#fff}
+.btn{background:var(--accent);color:var(--accent-ink);border-radius:14px}
+.btn.ghost{background:var(--card);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.btn.danger{background:var(--danger-soft);color:var(--danger);box-shadow:none}
+.pick button{background:var(--card)}
+.pick button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+
+/* 순위 */
+.medal{width:28px;height:28px;border-radius:8px;font-size:16px;font-weight:800;background:var(--chip);color:var(--ink)}
+.medal.m1{background:var(--accent);color:var(--accent-ink)}
+.medal.m2,.medal.m3{background:var(--navy);color:#fff}
+table.rank td{font-size:16px}
+table.rank td.nm{font-size:15px}
+table.rank td.net{color:var(--ink);font-weight:800;font-size:20px}
+.pod{border:0;border-radius:18px}
+.pod.first{background:var(--navy);color:#fff}
+.pod.first span{color:var(--mint)}
+.pod span{font-size:15px}
+
+/* 일정 */
+.tl li{border-top:1px solid var(--line)}
+.tl .t{font-size:18px;font-weight:700;color:var(--ink)}
+.tl li.ev-round{background:var(--brand-soft)}
+.evtag.round{background:var(--accent);color:var(--accent-ink)}
+.evtag.stay{background:var(--info);color:var(--on-info)}
+.tl li.ev-stay .t{color:var(--info)}
+
+/* 오늘 카드: 남색 */
+.todaycard{background:var(--navy);color:#fff;outline:0}
+.todaycard h3{color:#fff}
+.todaycard .chip{background:rgba(61,220,151,.16);color:var(--mint)}
+.todaycard .meta{color:rgba(255,255,255,.68)}
+.todaycard .tc-me{color:rgba(255,255,255,.72)}
+.todaycard .tc-me select{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff}
+.todaycard .tc-me select option{color:#0B1B2B}
+.todaycard .tc-mine{background:rgba(61,220,151,.12);box-shadow:inset 0 0 0 1.5px var(--mint);color:#fff}
+.todaycard .tc-group{background:rgba(255,255,255,.07);color:#fff}
+.todaycard .tc-group .tee{color:var(--mint);font-size:20px}
+.todaycard .fee{color:var(--mint)}
+.todaycard .evtag.round{background:var(--mint);color:#062B1A}
+.todaycard .evtag.stay{background:#5B8DEF;color:#fff}
+
+/* 라운딩 */
+.group{border:0;background:var(--bg);border-radius:14px}
+.group .tee{font-size:20px;color:var(--ink)}
+.name{background:var(--card);border-color:var(--line)}
+
+/* 경비 */
+.money-hero .big{font-size:46px;font-weight:800;letter-spacing:0}
+.bar{height:12px;background:var(--brand-soft)}
+.bar i{background:var(--accent)}
+.stat{background:var(--bg);border-radius:14px}
+.stat b{font-size:19px;font-weight:700}
+.list .r{font-size:18px;font-weight:700}
+.catbar b{font-size:16px}
+.catbar .b i{background:var(--accent)}
+
+/* 관리자 */
+.editrow{border-color:transparent;box-shadow:var(--shadow);border-radius:18px}
+.scorein .nt{font-size:20px}
+
+/* 하단 메뉴: 떠 있는 막대 */
+nav.tabs{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));padding:6px;border:0;border-radius:22px;background:var(--card);box-shadow:0 10px 30px rgba(11,27,43,.16)}
+nav.tabs .in{gap:2px}
+nav.tabs button{border-radius:14px;padding:7px 0 6px;color:var(--muted)}
+nav.tabs button.on{background:var(--navy);color:#fff}
+nav.tabs button.on svg{color:var(--mint)}
+.savebar{bottom:calc(92px + env(safe-area-inset-bottom))}
+.toast{bottom:calc(104px + env(safe-area-inset-bottom))}
 </style>
 </head>
 <body>
 <header class="hero">
   <div class="wrap">
     <div class="top">
-      <h1><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="8" cy="21" rx="6" ry="1.6" fill="rgba(255,255,255,.35)"/><path d="M8 21V3" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M9 3.5l11 4.5-11 4.5z" fill="#facc15"/></svg><span id="title">2027 골프여행</span><svg class="flip" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="8" cy="21" rx="6" ry="1.6" fill="rgba(255,255,255,.35)"/><path d="M8 21V3" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M9 3.5l11 4.5-11 4.5z" fill="#ef4444"/></svg></h1>
-      <div class="sub" id="subtitle"></div>
-      <button class="iconbtn abs" id="refresh" aria-label="새로고침">
+      <h1><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="8" cy="21" rx="6" ry="1.6" fill="rgba(11,27,43,.14)"/><path d="M8 21V3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 3.5l11 4.5-11 4.5z" fill="#facc15"/></svg><span id="title">2027 골프여행</span><svg class="flip" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="8" cy="21" rx="6" ry="1.6" fill="rgba(11,27,43,.14)"/><path d="M8 21V3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 3.5l11 4.5-11 4.5z" fill="#ef4444"/></svg></h1>
+      <button class="iconbtn" id="refresh" aria-label="새로고침">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
       </button>
     </div>
+    <div class="hero-main"><span class="dday" id="dday"></span><div class="sub" id="subtitle"></div></div>
     <div id="heroExtra"></div>
   </div>
 </header>
@@ -267,7 +367,7 @@ textarea.inp{min-height:70px;resize:vertical}
 <div class="toast" id="toast"></div>
 
 <!-- 파일을 고칠 때마다 v 값을 바꿔야 핸드폰에 예전 파일이 남지 않아요 -->
-<script src="config.js?v=17"></script>
-<script src="app.js?v=17"></script>
+<script src="config.js?v=18"></script>
+<script src="app.js?v=18"></script>
 </body>
 </html>
