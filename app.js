@@ -312,12 +312,8 @@ function viewSchedule(S, days) {
   return days.map(d => {
     const items = (data.schedule || []).filter(s => String(s.day) === String(d.n))
       .sort((a, b) => String(a.time).localeCompare(String(b.time)));
-    const rs = roundsOf(d.n);
-    const course = rs.length ? [...new Set(rs.map(r => r.course + (r.coursePart ? ` (${r.coursePart})` : '')))].join(', ') : '';
-    const tees = rs.filter(r => r.tee).map(r => `${esc(r.group)} ${esc(r.tee)}`).join(' · ');
     return `<section class="card ${tn === d.n ? 'today' : ''}">
-      <div class="row between"><h3>${d.n}일차</h3><span class="chip ${tn === d.n ? '' : 'gray'}">${tn === d.n ? '오늘 · ' : ''}${d.label}</span></div>
-      ${course ? `<div class="golfline">⛳ ${esc(course)}${tees ? ` · ${tees}` : ''}</div>` : ''}
+      <div class="row"><h3>${d.n}일차</h3><span class="chip ${tn === d.n ? '' : 'gray'}">${tn === d.n ? '오늘 · ' : ''}${d.label}</span></div>
       ${items.length ? `<ul class="tl">${items.map(evItem).join('')}</ul>` : '<div class="empty">등록된 일정이 없어요</div>'}
     </section>`;
   }).join('');
