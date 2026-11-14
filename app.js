@@ -366,10 +366,10 @@ function viewScores(S, days) {
       body = pod + `<section class="card">
         <div class="row between" style="margin-bottom:6px"><h3>종합 순위</h3><span class="chip">${o.playedDays}라운드 진행</span></div>
         <table class="rank"><thead><tr><th>순위</th><th>이름</th><th>라운드</th><th>평균<br>타수</th><th>평균<br>핸디적용</th></tr></thead><tbody>
-        ${o.ranked.map(r => `<tr><td class="rk">${medal(r.rank)}</td><td class="nm">${esc(r.name)}${r === medalist ? ' <span class="chip gold">메달</span>' : ''}<span class="sub2">핸디 ${r.hcp != null ? r.hcp : '-'} · 핸디적용 합계 ${r.totalNet}</span></td><td>${r.cnt}</td><td>${f1(r.avgGross)}</td><td class="net">${f1(r.avgNet)}</td></tr>`).join('')}
+        ${o.ranked.map(r => `<tr><td class="rk">${medal(r.rank)}</td><td class="nm">${esc(r.name)}${r === medalist ? ' <span class="chip gold">최저타</span>' : ''}<span class="sub2">핸디 ${r.hcp != null ? r.hcp : '-'} · 핸디적용 합계 ${r.totalNet}</span></td><td>${r.cnt}</td><td>${f1(r.avgGross)}</td><td class="net">${f1(r.avgNet)}</td></tr>`).join('')}
         ${o.rest.filter(r => r.cnt > 0).map(r => `<tr class="out"><td class="rk">–</td><td class="nm">${esc(r.name)}<span class="sub2">${o.need}라운드 미만 · 순위 제외</span></td><td>${r.cnt}</td><td>${f1(r.avgGross)}</td><td>${f1(r.avgNet)}</td></tr>`).join('')}
         </tbody></table>
-        <div class="note">순위 = 평균 핸디적용타수(타수 − 핸디) 낮은 순 · 같으면 평균 타수 낮은 순 · ${o.need}라운드 이상 참가자만 순위에 포함</div>
+        <div class="note">순위 = 평균 핸디적용타수(타수 − 핸디) 낮은 순 · 같으면 평균 타수 낮은 순 · ${o.need}라운드 이상 참가자만 순위에 포함 · 최저타 = 핸디 적용 전 평균 타수가 가장 적은 사람</div>
       </section>
       <section class="card">
         <h3 style="margin-bottom:6px">일자별 타수</h3>
@@ -393,7 +393,7 @@ function viewScores(S, days) {
     body = `<section class="card">
       <div class="row between" style="margin-bottom:6px"><h3>${d.n}일차 순위</h3><span class="chip gray">${esc(course || '')} ${d.short}</span></div>
       ${rows.length ? `<table class="rank"><thead><tr><th>순위</th><th>이름</th><th>타수</th><th>핸디</th><th>핸디적용<br>타수</th></tr></thead><tbody>
-      ${rows.map(r => `<tr><td class="rk">${medal(r.rank)}</td><td class="nm">${esc(r.name)}${r.medalist ? ' <span class="chip gold">메달</span>' : ''}</td><td>${r.gross}</td><td>${r.hcp}</td><td class="net">${r.net}</td></tr>`).join('')}
+      ${rows.map(r => `<tr><td class="rk">${medal(r.rank)}</td><td class="nm">${esc(r.name)}${r.medalist ? ' <span class="chip gold">최저타</span>' : ''}</td><td>${r.gross}</td><td>${r.hcp}</td><td class="net">${r.net}</td></tr>`).join('')}
       </tbody></table>` : '<div class="empty">아직 입력된 스코어가 없어요</div>'}
       ${missing.length && rows.length ? `<div class="note">미입력: ${missing.map(esc).join(', ')}</div>` : ''}
     </section>`;
