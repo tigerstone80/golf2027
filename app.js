@@ -511,7 +511,7 @@ function viewSchedule(S, days) {
 function viewRounds(S, days) {
   const tn = todayN(days);
   const hcpOf = n => { const m = (data.members || []).find(x => x.name === n); return m ? (has(m.hcp) ? num(m.hcp) : '미정') : null; };
-  const cards = days.map(d => {
+  const cards = orderDays(days).map(d => {
     const rs = roundsOf(d.n);
     if (!rs.length) return '';
     const course = [...new Set(rs.map(r => r.course))].join(', ');
