@@ -83,7 +83,7 @@ function tripDays(S) {
   return days;
 }
 
-// 일자별 결과: 타수가 입력된 사람만, 넷 = 타수 - 핸디, 동점은 공동순위
+// 일자별 결과: 타수가 입력된 사람만, 핸디적용타수(net) = 타수 - 핸디, 동점은 공동순위
 function dayResults(data, day) {
   const rows = (data.scores || [])
     .filter(s => String(s.day) === String(day) && has(s.gross) && num(s.gross) > 0)
@@ -95,7 +95,7 @@ function dayResults(data, day) {
   return rows;
 }
 
-// 종합: 평균 넷 스코어로 순위. 최소 라운드 수(진행된 라운드 수를 넘지 않게) 미만은 순위 제외
+// 종합: 평균 핸디적용타수로 순위. 최소 라운드 수(진행된 라운드 수를 넘지 않게) 미만은 순위 제외
 function overallResults(data) {
   const S = settingsMap(data);
   const par = num(S.par) || 72;
@@ -360,21 +360,21 @@ function viewScores(S, days) {
     } else {
       const top = o.ranked.slice(0, 3);
       const pod = top.length >= 3 ? `<div class="podium">
-        ${[1, 0, 2].map(i => `<div class="pod ${i === 0 ? 'first' : ''}"><div class="p">${['🥇', '🥈', '🥉'][i]}</div><b>${esc(top[i].name)}</b><span>평균 넷 ${f1(top[i].avgNet)}</span></div>`).join('')}
+        ${[1, 0, 2].map(i => `<div class="pod ${i === 0 ? 'first' : ''}"><div class="p">${['🥇', '🥈', '🥉'][i]}</div><b>${esc(top[i].name)}</b><span>평균 핸디적용 ${f1(top[i].avgNet)}</span></div>`).join('')}
       </div>` : '';
       const medalist = o.ranked.slice().sort((a, b) => a.avgGross - b.avgGross)[0];
       body = pod + `<section class="card">
         <div class="row between" style="margin-bottom:6px"><h3>종합 순위</h3><span class="chip">${o.playedDays}라운드 진행</span></div>
-        <table class="rank"><thead><tr><th>순위</th><th>이름</th><th>라운드</th><th>평균타수</th><th>평균넷</th></tr></thead><tbody>
-        ${o.ranked.map(r => `<tr><td class="rk">${medal(r.rank)}</td><td class="nm">${esc(r.name)}${r === medalist ? ' <span class="chip gold">메달</span>' : ''}<span class="sub2">핸디 ${r.hcp != null ? r.hcp : '-'} · 넷합계 ${r.totalNet}</span></td><td>${r.cnt}</td><td>${f1(r.avgGross)}</td><td class="net">${f1(r.avgNet)}</td></tr>`).join('')}
+        <table class="rank"><thead><tr><th>순위</th><th>이름</th><th>라운드</th><th>평균<br>타수</th><th>평균<br>핸디적용</th></tr></thead><tbody>
+        ${o.ranked.map(r => `<tr><td class="rk">${medal(r.rank)}</td><td class="nm">${esc(r.name)}${r === medalist ? ' <span class="chip gold">메달</span>' : ''}<span class="sub2">핸디 ${r.hcp != null ? r.hcp : '-'} · 핸디적용 합계 ${r.totalNet}</span></td><td>${r.cnt}</td><td>${f1(r.avgGross)}</td><td class="net">${f1(r.avgNet)}</td></tr>`).join('')}
         ${o.rest.filter(r => r.cnt > 0).map(r => `<tr class="out"><td class="rk">–</td><td class="nm">${esc(r.name)}<span class="sub2">${o.need}라운드 미만 · 순위 제외</span></td><td>${r.cnt}</td><td>${f1(r.avgGross)}</td><td>${f1(r.avgNet)}</td></tr>`).join('')}
         </tbody></table>
-        <div class="note">순위 = 평균 넷 스코어(타수 − 핸디) 낮은 순 · 같으면 평균 타수 낮은 순 · ${o.need}라운드 이상 참가자만 순위에 포함</div>
+        <div class="note">순위 = 평균 핸디적용타수(타수 − 핸디) 낮은 순 · 같으면 평균 타수 낮은 순 · ${o.need}라운드 이상 참가자만 순위에 포함</div>
       </section>
       <section class="card">
         <h3 style="margin-bottom:6px">일자별 타수</h3>
         <table class="rank matrix"><thead><tr><th>이름</th>${days.map(d => `<th>${d.n}일</th>`).join('')}</tr></thead><tbody>
-        ${o.ranked.concat(o.rest.filter(r => r.cnt > 0)).map(r => `<tr><td class="nm">${esc(r.name)}</td>${days.map(d => r.per[d.n] ? `<td>${r.per[d.n].gross}<span class="sub2">넷 ${r.per[d.n].net}</span></td>` : '<td class="meta">–</td>').join('')}</tr>`).join('')}
+        ${o.ranked.concat(o.rest.filter(r => r.cnt > 0)).map(r => `<tr><td class="nm">${esc(r.name)}</td>${days.map(d => r.per[d.n] ? `<td>${r.per[d.n].gross}<span class="sub2">핸디적용 ${r.per[d.n].net}</span></td>` : '<td class="meta">–</td>').join('')}</tr>`).join('')}
         </tbody></table>
       </section>
       <section class="card">
@@ -392,7 +392,7 @@ function viewScores(S, days) {
     const missing = playersAll.filter(n => !rows.find(r => r.name === n));
     body = `<section class="card">
       <div class="row between" style="margin-bottom:6px"><h3>${d.n}일차 순위</h3><span class="chip gray">${esc(course || '')} ${d.short}</span></div>
-      ${rows.length ? `<table class="rank"><thead><tr><th>순위</th><th>이름</th><th>타수</th><th>핸디</th><th>넷</th></tr></thead><tbody>
+      ${rows.length ? `<table class="rank"><thead><tr><th>순위</th><th>이름</th><th>타수</th><th>핸디</th><th>핸디적용<br>타수</th></tr></thead><tbody>
       ${rows.map(r => `<tr><td class="rk">${medal(r.rank)}</td><td class="nm">${esc(r.name)}${r.medalist ? ' <span class="chip gold">메달</span>' : ''}</td><td>${r.gross}</td><td>${r.hcp}</td><td class="net">${r.net}</td></tr>`).join('')}
       </tbody></table>` : '<div class="empty">아직 입력된 스코어가 없어요</div>'}
       ${missing.length && rows.length ? `<div class="note">미입력: ${missing.map(esc).join(', ')}</div>` : ''}
@@ -599,12 +599,12 @@ function adminScores(days) {
   const memHcp = n => { const m = (data.members || []).find(x => x.name === n); return m ? num(m.hcp) : 0; };
   return `<div class="seg">${days.map(d => `<button data-sd="${d.n}" class="${String(scoreDay) === String(d.n) ? 'on' : ''}">${d.n}일차</button>`).join('')}</div>
     <section class="card">
-      <div class="scorehead"><span>이름</span><span>타수</span><span>핸디</span><span>넷</span></div>
+      <div class="scorehead" style="grid-template-columns:1fr 64px 52px 64px"><span>이름</span><span>타수</span><span>핸디</span><span>핸디적용<br>타수</span></div>
       ${order.map(n => {
         const e = existing[n];
         const g = e ? e.gross : '';
         const h = e && has(e.hcp) ? num(e.hcp) : memHcp(n);
-        return `<div class="scorein" data-name="${esc(n)}">
+        return `<div class="scorein" data-name="${esc(n)}" style="grid-template-columns:1fr 64px 52px 64px">
           <div><b>${esc(n)}</b>${groupOf[n] ? ` <span class="chip gray">${esc(groupOf[n])}</span>` : ' <span class="chip gray">불참?</span>'}</div>
           <input class="inp sg" inputmode="numeric" value="${esc(g)}" placeholder="-">
           <input class="inp sh" inputmode="numeric" value="${esc(h)}">
