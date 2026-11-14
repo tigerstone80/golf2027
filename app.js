@@ -34,16 +34,16 @@ function seedData() {
     members: Object.values(M).map(([name, hcp, note]) => ({ name, hcp, paid: '0', note })),
     schedule: [
       { day: '1', time: '07:00', content: '출발', note: '' },
-      { day: '1', time: '12:00', content: '라운딩', note: '골프장 미정' },
+      { day: '1', time: '12:00', type: '라운딩', content: '골프장 미정', note: '' },
       { day: '1', time: '18:00', content: '숙소 체크인 · 저녁식사', note: '' },
       { day: '2', time: '06:30', content: '기상 및 아침식사', note: '' },
-      { day: '2', time: '08:00', content: '라운딩', note: '' },
+      { day: '2', time: '08:00', type: '라운딩', content: '골프장 미정', note: '' },
       { day: '2', time: '18:00', content: '저녁식사 · 휴식', note: '' },
       { day: '3', time: '06:30', content: '기상 및 아침식사', note: '' },
-      { day: '3', time: '08:00', content: '라운딩', note: '' },
+      { day: '3', time: '08:00', type: '라운딩', content: '골프장 미정', note: '' },
       { day: '3', time: '18:00', content: '저녁식사 · 휴식', note: '' },
       { day: '4', time: '06:30', content: '기상 및 아침식사', note: '' },
-      { day: '4', time: '08:00', content: '라운딩', note: '' },
+      { day: '4', time: '08:00', type: '라운딩', content: '골프장 미정', note: '' },
       { day: '4', time: '13:00', content: '점심 · 시상식 · 귀가', note: '' },
     ],
     rounds,
@@ -297,6 +297,16 @@ function roundsOf(day) {
     .sort((a, b) => String(a.tee).localeCompare(String(b.tee)) || String(a.group).localeCompare(String(b.group), 'ko'));
 }
 
+const EV_TYPES = ['라운딩', '숙소', '기타'];
+function evItem(s) {
+  const ty = EV_TYPES.includes(s.type) ? s.type : '기타';
+  const cls = ty === '라운딩' ? 'ev-round' : ty === '숙소' ? 'ev-stay' : '';
+  const body = ty === '라운딩' ? `<span class="evtag round">⛳ 라운딩</span><b>${esc(s.content || '골프장 미정')}</b>`
+    : ty === '숙소' ? `<span class="evtag stay">🏨 숙소</span><b>${esc(s.content || '장소 미정')}</b>`
+    : esc(s.content);
+  return `<li class="${cls}"><div class="t">${esc(s.time)}</div><div>${body}${s.note ? `<div class="n">${esc(s.note)}</div>` : ''}</div></li>`;
+}
+
 function viewSchedule(S, days) {
   const tn = todayN(days);
   return days.map(d => {
@@ -308,7 +318,7 @@ function viewSchedule(S, days) {
     return `<section class="card ${tn === d.n ? 'today' : ''}">
       <div class="row between"><h3>${d.n}일차</h3><span class="chip ${tn === d.n ? '' : 'gray'}">${tn === d.n ? '오늘 · ' : ''}${d.label}</span></div>
       ${course ? `<div class="golfline">⛳ ${esc(course)}${tees ? ` · ${tees}` : ''}</div>` : ''}
-      ${items.length ? `<ul class="tl">${items.map(s => `<li><div class="t">${esc(s.time)}</div><div>${esc(s.content)}${s.note ? `<div class="n">${esc(s.note)}</div>` : ''}</div></li>`).join('')}</ul>` : '<div class="empty">등록된 일정이 없어요</div>'}
+      ${items.length ? `<ul class="tl">${items.map(evItem).join('')}</ul>` : '<div class="empty">등록된 일정이 없어요</div>'}
     </section>`;
   }).join('');
 }
@@ -464,10 +474,16 @@ const EDITORS = {
     fields: [{ k: 'name', l: '이름', w: 1 }, { k: 'amount', l: '금액(원)', t: 'money', w: 1 }, { k: 'note', l: '비고' }],
   },
   schedule: {
-    label: r => `${r.day}일차 ${r.time || ''} ${r.content || ''}`,
-    blank: () => ({ day: '1', time: '', content: '', note: '' }),
+    label: r => `${r.day}일차 ${r.time || ''} ${r.type && r.type !== '기타' ? '[' + r.type + '] ' : ''}${r.content || ''}`,
+    rowClass: r => r.type === '라운딩' ? 'ev-round' : r.type === '숙소' ? 'ev-stay' : '',
+    blank: () => ({ day: '1', time: '', type: '기타', content: '', note: '' }),
     sort: (a, b) => num(a.day) - num(b.day) || String(a.time).localeCompare(String(b.time)),
-    fields: [{ k: 'day', l: '일차', t: 'day', w: 1 }, { k: 'time', l: '시간', t: 'time', w: 1 }, { k: 'content', l: '내용' }, { k: 'note', l: '비고 (장소·맛집 등)' }],
+    fields: [
+      { k: 'day', l: '일차', t: 'day', w: 1 }, { k: 'time', l: '시간', t: 'time', w: 1 },
+      { k: 'type', l: '종류', t: 'evtype' },
+      { k: 'content', l: r => r.type === '라운딩' ? '골프장 이름' : r.type === '숙소' ? '숙소 장소' : '내용', ph: r => r.type === '라운딩' ? '예) 포항CC' : r.type === '숙소' ? '예) 포항 에이원호텔' : '예) 저녁식사' },
+      { k: 'note', l: '비고 (메모)' },
+    ],
   },
   rounds: {
     label: r => `${r.day}일차 ${r.group || ''} ${r.tee || ''}`,
@@ -526,6 +542,7 @@ function inputFor(f, row, i, days) {
   const v = row[f.k] == null ? '' : row[f.k];
   const a = `data-i="${i}" data-k="${f.k}"`;
   if (f.t === 'day') return `<select class="inp" ${a}>${days.map(d => `<option value="${d.n}" ${String(v) === String(d.n) ? 'selected' : ''}>${d.n}일차 ${d.short}</option>`).join('')}</select>`;
+  if (f.t === 'evtype') return `<select class="inp" ${a}>${EV_TYPES.map(c => `<option ${c === (v || '기타') ? 'selected' : ''}>${c}</option>`).join('')}</select>`;
   if (f.t === 'cat') return `<select class="inp" ${a}>${CATEGORIES.map(c => `<option ${c === v ? 'selected' : ''}>${c}</option>`).join('')}</select>`;
   if (f.t === 'date') return `<input class="inp" type="date" ${a} value="${esc(v)}">`;
   if (f.t === 'time') return `<input class="inp" type="time" ${a} value="${esc(v)}">`;
@@ -535,7 +552,8 @@ function inputFor(f, row, i, days) {
     const sel = splitNames(v);
     return `<div class="pick" data-players="${i}">${(data.members || []).filter(m => m.name).map(m => `<button type="button" data-p="${esc(m.name)}" class="${sel.includes(m.name) ? 'on' : ''}">${esc(m.name)}</button>`).join('')}</div>`;
   }
-  return `<input class="inp" type="text" ${a} value="${esc(v)}">`;
+  const ph = typeof f.ph === 'function' ? f.ph(row) : (f.ph || '');
+  return `<input class="inp" type="text" ${a} value="${esc(v)}" placeholder="${esc(ph)}">`;
 }
 
 function adminTable(key, days) {
@@ -546,11 +564,11 @@ function adminTable(key, days) {
     let html = '', buf = [];
     const flush = () => { if (buf.length) { html += `<div class="grid2">${buf.join('')}</div>`; buf = []; } };
     fields.forEach(f => {
-      const cell = `<div class="field"><label>${f.l}</label>${inputFor(f, row, i, days)}</div>`;
+      const cell = `<div class="field"><label>${typeof f.l === 'function' ? f.l(row) : f.l}</label>${inputFor(f, row, i, days)}</div>`;
       if (f.w === 1 || f.w === 2) { buf.push(cell); if (buf.length === 2) flush(); } else { flush(); html += cell; }
     });
     flush();
-    return `<div class="editrow"><div class="hd"><span>${esc(ed.label(row))}</span><button class="btn small danger" data-del="${i}">삭제</button></div>${html}</div>`;
+    return `<div class="editrow ${ed.rowClass ? ed.rowClass(row) : ''}"><div class="hd"><span>${esc(ed.label(row))}</span><button class="btn small danger" data-del="${i}">삭제</button></div>${html}</div>`;
   }).join('');
   let quick = '';
   if (key === 'expenses') {
@@ -681,7 +699,7 @@ function bindAdmin() {
   if (draft && EDITORS[adminTab]) {
     const markDirty = () => { dirty = true; const s = $('saveTable'); if (s) s.disabled = false; };
     v.querySelectorAll('[data-i][data-k]').forEach(el => {
-      el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => { draft[num(el.dataset.i)][el.dataset.k] = el.value; markDirty(); });
+      el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => { draft[num(el.dataset.i)][el.dataset.k] = el.value; markDirty(); if (el.dataset.k === 'type') render(); });
     });
     v.querySelectorAll('[data-players]').forEach(box => {
       const i = num(box.dataset.players);
@@ -703,7 +721,7 @@ function bindAdmin() {
     };
     if ($('saveTable')) $('saveTable').onclick = async () => {
       // 빈 줄(일차·분류 같은 기본값만 있는 줄)은 버림
-      const IGNORE = ['day', 'category', 'hcp', 'paid'];
+      const IGNORE = ['day', 'category', 'hcp', 'paid', 'type'];
       const rows = draft.filter(r => Object.keys(r).some(k => !IGNORE.includes(k) && String(r[k] || '').trim() !== ''));
       rows.forEach(r => ['amount', 'paid', 'hcp'].forEach(k => { if (k in r && has(r[k])) r[k] = String(num(r[k])); }));
       $('saveTable').disabled = true;
