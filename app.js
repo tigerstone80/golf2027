@@ -407,13 +407,6 @@ function roundsOf(day) {
 
 // ───────── 오늘 요약 · 길찾기 · 공유 ─────────
 const ME_KEY = 'golf2027.me';
-function mapLinks(q) {
-  q = String(q || '').trim();
-  if (!q || /미정/.test(q)) return '';
-  const e = encodeURIComponent(q);
-  return `<div class="maps"><a href="https://map.naver.com/p/search/${e}" target="_blank" rel="noopener">📍 네이버지도</a></div>`;
-}
-
 function todayCard(days) {
   if (!days.length) return '';
   const t = new Date(); t.setHours(0, 0, 0, 0);
@@ -429,7 +422,7 @@ function todayCard(days) {
   const me = store.get(ME_KEY) || '';
   const members = (data.members || []).filter(m => m.name);
   const mine = me ? groups.find(r => splitNames(r.players).includes(me)) : null;
-  const line = (tag, list, empty) => `<div class="tc-line">${tag}<div>${list.length ? list.map(s => `<div><b>${esc(s.content || empty)}</b>${s.time ? ` <span class="meta">${esc(s.time)}</span>` : ''}${mapLinks(s.content)}</div>`).join('') : `<span class="meta">${empty}</span>`}</div></div>`;
+  const line = (tag, list, empty) => `<div class="tc-line">${tag}<div>${list.length ? list.map(s => `<div><b>${esc(s.content || empty)}</b>${s.time ? ` <span class="meta">${esc(s.time)}</span>` : ''}</div>`).join('') : `<span class="meta">${empty}</span>`}</div></div>`;
   return `<section class="card todaycard">
     <div class="row between"><h3>${title}</h3><span class="chip">${n}일차 · ${d.short}</span></div>
     <div class="tc-me"><span>나는</span><select id="meSel"><option value="">이름 선택</option>${members.map(m => `<option ${m.name === me ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></div>
@@ -493,7 +486,7 @@ function evItem(s) {
   const body = ty === '라운딩' ? `<span class="evtag round">⛳ 라운딩</span><b>${esc(s.content || '골프장 미정')}</b>`
     : ty === '숙소' ? `<span class="evtag stay">🏨 숙소</span><b>${esc(s.content || '장소 미정')}</b>`
     : esc(s.content);
-  return `<li class="${cls}"><div class="t">${esc(s.time)}</div><div>${body}${s.note ? `<div class="n">${esc(s.note)}</div>` : ''}${ty !== '기타' ? mapLinks(s.content) : ''}</div></li>`;
+  return `<li class="${cls}"><div class="t">${esc(s.time)}</div><div>${body}${s.note ? `<div class="n">${esc(s.note)}</div>` : ''}</div></li>`;
 }
 
 function viewSchedule(S, days) {
