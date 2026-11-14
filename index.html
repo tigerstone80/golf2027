@@ -22,6 +22,7 @@
   --danger:#c2410c; --danger-soft:#fdeee5; --info:#1d4ed8; --info-soft:#e6edfd;
   --shadow:0 1px 2px rgba(16,40,24,.06),0 4px 14px rgba(16,40,24,.06);
   --radius:16px;
+  --today-bg:#eef8f0;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -30,6 +31,7 @@
     --gold:#f2b544; --gold-soft:#3a2d12; --silver:#a5adb8; --bronze:#d08a52;
     --danger:#fb8a5a; --danger-soft:#3b1d12; --info:#7aa2ff; --info-soft:#18233f;
     --shadow:0 1px 2px rgba(0,0,0,.3);
+    --today-bg:#1b2c22;
   }
 }
 :root[data-theme="dark"]{
@@ -38,6 +40,7 @@
   --gold:#f2b544; --gold-soft:#3a2d12; --silver:#a5adb8; --bronze:#d08a52;
   --danger:#fb8a5a; --danger-soft:#3b1d12; --info:#7aa2ff; --info-soft:#18233f;
   --shadow:0 1px 2px rgba(0,0,0,.3);
+  --today-bg:#1b2c22;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
@@ -76,7 +79,7 @@ main{padding-top:14px}
 .chip.gray{background:var(--line);color:var(--muted)}
 .chip.red{background:var(--danger-soft);color:var(--danger)}
 .chip.blue{background:var(--info-soft);color:var(--info)}
-.today{outline:2px solid var(--brand-2);outline-offset:-1px}
+.today{outline:2px solid var(--brand-2);outline-offset:-1px;background:var(--today-bg)}
 
 /* 일정 타임라인 */
 .tl{list-style:none;margin:10px 0 0;padding:0}
@@ -263,7 +266,7 @@ textarea.inp{min-height:70px;resize:vertical}
 <div class="toast" id="toast"></div>
 
 <!-- 파일을 고칠 때마다 v 값을 바꿔야 핸드폰에 예전 파일이 남지 않아요 -->
-<script src="config.js?v=14"></script>
-<script src="app.js?v=14"></script>
+<script src="config.js?v=15"></script>
+<script src="app.js?v=15"></script>
 </body>
 </html>
