@@ -233,6 +233,25 @@ async function saveTable(key, rows) {
   }
 }
 
+// 일정의 '라운딩' 골프장 이름을 같은 일차의 라운딩(조 편성) 골프장 칸에 똑같이 넣음
+async function syncCourses(sched) {
+  const byDay = {};
+  sched.filter(s => s.type === '라운딩' && String(s.content || '').trim()).forEach(s => {
+    const k = String(s.day), name = String(s.content).trim();
+    byDay[k] = byDay[k] || [];
+    if (!byDay[k].includes(name)) byDay[k].push(name);
+  });
+  const rounds = clone(data.rounds || []);
+  let changed = false;
+  Object.keys(byDay).forEach(day => {
+    const name = byDay[day].join(', ');
+    const rs = rounds.filter(r => String(r.day) === day);
+    if (!rs.length) { rounds.push({ day, course: name, coursePart: '', group: '1조', tee: '', players: '', note: '' }); changed = true; }
+    rs.forEach(r => { if (r.course !== name) { r.course = name; changed = true; } });
+  });
+  if (changed && await saveTable('rounds', rounds)) toast('라운딩의 골프장 이름도 함께 바꿨어요');
+}
+
 // 확인 창 (브라우저 confirm 대신 화면 안에 표시)
 function ask(msg) {
   return new Promise(resolve => {
@@ -304,7 +323,7 @@ function mapLinks(q) {
   q = String(q || '').trim();
   if (!q || /미정/.test(q)) return '';
   const e = encodeURIComponent(q);
-  return `<div class="maps"><a href="https://map.kakao.com/link/search/${e}" target="_blank" rel="noopener">📍 카카오맵</a><a href="https://map.naver.com/p/search/${e}" target="_blank" rel="noopener">📍 네이버지도</a></div>`;
+  return `<div class="maps"><a href="https://map.naver.com/p/search/${e}" target="_blank" rel="noopener">📍 네이버지도</a></div>`;
 }
 
 function todayCard(days) {
@@ -572,7 +591,7 @@ const EDITORS = {
     sort: (a, b) => num(a.day) - num(b.day) || String(a.group).localeCompare(String(b.group), 'ko'),
     fields: [
       { k: 'day', l: '일차', t: 'day', w: 1 }, { k: 'group', l: '조', w: 1 },
-      { k: 'course', l: '골프장', w: 1 }, { k: 'coursePart', l: '코스', w: 1 },
+      { k: 'course', l: '골프장 (일정과 연동)', w: 1 }, { k: 'coursePart', l: '코스', w: 1 },
       { k: 'tee', l: '티타임', t: 'time', w: 1 }, { k: 'note', l: '비고 (캐디피 별도 등)', w: 1 },
       { k: 'players', l: '멤버 (눌러서 선택)', t: 'players' },
     ],
@@ -814,7 +833,7 @@ function bindAdmin() {
       const rows = draft.filter(r => Object.keys(r).some(k => !IGNORE.includes(k) && String(r[k] || '').trim() !== ''));
       rows.forEach(r => ['amount', 'paid', 'hcp'].forEach(k => { if (k in r && has(r[k])) r[k] = String(num(r[k])); }));
       $('saveTable').disabled = true;
-      if (await saveTable(adminTab, rows)) { draft = null; draftKey = null; dirty = false; render(); }
+      if (await saveTable(adminTab, rows)) { if (adminTab === 'schedule') await syncCourses(rows); draft = null; draftKey = null; dirty = false; render(); }
       else $('saveTable').disabled = false;
     };
     if ($('qAdd')) $('qAdd').onclick = async () => {
