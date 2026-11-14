@@ -3,7 +3,7 @@
 'use strict';
 
 // ───────── 표 정의 (apps-script/Code.gs 의 TABLES 와 키가 같아야 함) ─────────
-const TABLE_KEYS = ['settings', 'members', 'schedule', 'rounds', 'scores', 'sponsors', 'expenses'];
+const TABLE_KEYS = ['settings', 'members', 'schedule', 'rounds', 'scores', 'sponsors', 'expenses', 'photos'];
 const CATEGORIES = ['골프장', '숙소', '차량', '식사', '캐디피·카트비', '시상·기념품', '기타'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -252,6 +252,74 @@ async function syncCourses(sched) {
   if (changed && await saveTable('rounds', rounds)) toast('라운딩의 골프장 이름도 함께 바꿨어요');
 }
 
+// ───────── 스코어카드 사진 ─────────
+const photoUrl = (id, w) => `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w${w}`;
+
+function scorePhotosCard(days) {
+  const counts = days.map(d => ({ d, n: (data.photos || []).filter(p => String(p.day) === String(d.n)).length }));
+  return `<section class="card">
+    <h3 style="margin-bottom:8px">📷 일자별 스코어카드</h3>
+    <div class="grid2">${counts.map(x => `<button class="btn ghost" data-photos="${x.d.n}" ${x.n ? '' : 'disabled'}>${x.d.n}일차 스코어 상세보기${x.n ? '' : ' (없음)'}</button>`).join('')}</div>
+  </section>`;
+}
+
+function showPhotos(day) {
+  const list = (data.photos || []).filter(p => String(p.day) === String(day))
+    .sort((a, b) => String(a.group).localeCompare(String(b.group), 'ko'));
+  const wrap = document.createElement('div');
+  wrap.className = 'modal photomodal';
+  wrap.innerHTML = `<div class="pbox"><div class="row between"><h3>${esc(day)}일차 스코어카드</h3><button class="btn small ghost" data-close>닫기</button></div>
+    ${list.map(p => `<figure><figcaption>${esc(p.group)}</figcaption><a href="https://drive.google.com/file/d/${encodeURIComponent(p.fileId)}/view" target="_blank" rel="noopener"><img src="${photoUrl(p.fileId, 1600)}" alt="${esc(p.group)} 스코어카드" loading="lazy"></a></figure>`).join('') || '<div class="empty">사진이 없어요</div>'}
+    <div class="note">사진을 누르면 크게 볼 수 있어요.</div></div>`;
+  wrap.addEventListener('click', e => { if (e.target === wrap || e.target.closest('[data-close]')) wrap.remove(); });
+  document.body.appendChild(wrap);
+}
+
+// 핸드폰 사진을 긴 변 max 픽셀 JPEG로 줄여 base64로 만듦
+function imageToJpegB64(file, max) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const s = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      const g = c.getContext('2d');
+      g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+      g.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', 0.88).split(',')[1]);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('사진을 열 수 없어요')); };
+    img.src = url;
+  });
+}
+
+// 인식 결과를 타수 칸에 채움 (저장은 사람이 확인 후)
+function applyOcr(result, warn, typed) {
+  const v = document.getElementById('view');
+  const rowsEl = [...v.querySelectorAll('.scorein')];
+  rowsEl.forEach(r => { const t = typed[r.dataset.name]; if (t) { r.querySelector('.sg').value = t.g; r.querySelector('.sh').value = t.h; r.querySelector('.sg').dispatchEvent(new Event('input')); } });
+  const box = document.getElementById('ocrResult');
+  if (!box) return;
+  if (!result) { box.innerHTML = `<div class="ocr">사진은 저장했어요.${warn ? `<div class="note">자동 인식은 못 했어요: ${esc(warn)}</div>` : ''}</div>`; return; }
+  const norm = s => String(s || '').replace(/\s/g, '');
+  let filled = 0;
+  const lines = (result.players || []).map(p => {
+    const row = rowsEl.find(r => norm(r.dataset.name) === norm(p.name));
+    const sumOk = num(p.front) + num(p.back) === num(p.total);
+    if (row && num(p.total) > 0) {
+      const inp = row.querySelector('.sg');
+      inp.value = num(p.total); inp.classList.add('auto'); inp.dispatchEvent(new Event('input'));
+      filled++;
+    }
+    return `<li><b>${esc(p.name)}</b> ${num(p.total)}타 <span class="meta">(${num(p.front)}+${num(p.back)})</span>${sumOk ? '' : ' <span class="chip red">합계 확인</span>'}${row ? '' : ' <span class="chip red">참가자에 없음</span>'}</li>`;
+  });
+  box.innerHTML = `<div class="ocr"><b>읽은 결과</b>${result.course ? ' · ' + esc(result.course) : ''}${result.date ? ' · ' + esc(result.date) : ''}
+    <ul>${lines.join('')}</ul>
+    <div class="note">${filled}명 타수를 채웠어요(초록 칸). 확인한 뒤 아래 '${scoreDay}일차 스코어 저장'을 눌러 주세요.</div></div>`;
+}
+
 // 확인 창 (브라우저 confirm 대신 화면 안에 표시)
 function ask(msg) {
   return new Promise(resolve => {
@@ -463,7 +531,7 @@ function viewScores(S, days) {
   if (scoreTab === 'all') {
     const o = overallResults(data);
     if (!o.ranked.length) {
-      body = `<section class="card empty">아직 입력된 스코어가 없어요.<br>라운딩 후 관리자 페이지에서 타수를 입력하면 자동으로 순위가 계산돼요.</section>`;
+      body = `<section class="card empty">아직 입력된 스코어가 없어요.<br>라운딩 후 관리자 페이지에서 타수를 입력하면 자동으로 순위가 계산돼요.</section>` + scorePhotosCard(days);
     } else {
       const top = o.ranked.slice(0, 3);
       const pod = top.length >= 3 ? `<div class="podium">
@@ -478,6 +546,7 @@ function viewScores(S, days) {
         <div class="note">순위 = 평균 핸디적용타수(타수 − 핸디) 낮은 순 · 같으면 평균 타수 낮은 순 · ${o.need}라운드 이상 참가자만 순위에 포함</div>
         <button class="btn ghost block sharebtn" data-share="all">📤 종합 순위 공유</button>
       </section>
+      ${scorePhotosCard(days)}
       <section class="card">
         <h3 style="margin-bottom:6px">일자별 타수</h3>
         <table class="rank matrix"><thead><tr><th>이름</th>${days.map(d => `<th>${d.n}일</th>`).join('')}</tr></thead><tbody>
@@ -714,7 +783,14 @@ function adminScores(days) {
   const existing = {};
   (data.scores || []).filter(s => String(s.day) === String(scoreDay)).forEach(s => { existing[s.name] = s; if (!order.includes(s.name)) order.push(s.name); });
   const memHcp = n => { const m = (data.members || []).find(x => x.name === n); return m ? num(m.hcp) : 0; };
+  const pGroups = (() => { const g = [...new Set(rs.map(r => r.group).filter(Boolean))]; return g.length ? g : ['1조', '2조']; })();
+  const photoOf = g => (data.photos || []).find(p => String(p.day) === String(scoreDay) && p.group === g);
   return `<div class="seg">${days.map(d => `<button data-sd="${d.n}" class="${String(scoreDay) === String(d.n) ? 'on' : ''}">${d.n}일차</button>`).join('')}</div>
+    <section class="card"><h3>📷 스마트스코어 사진</h3>
+      <div class="note" style="margin:2px 0 10px">조별 스코어카드 캡처를 올리면 타수를 자동으로 읽어 아래 칸에 채워요. 확인한 뒤 저장을 눌러 주세요.</div>
+      <div class="photo-slots">${pGroups.map(g => { const p = photoOf(g); return `<div class="pslot">${p ? `<img src="${photoUrl(p.fileId, 400)}" alt="${esc(g)} 스코어카드">` : '<div class="pempty">사진 없음</div>'}<label class="btn small ghost">${p ? esc(g) + ' 다시 올리기' : esc(g) + ' 사진 올리기'}<input type="file" accept="image/*" data-upload="${esc(g)}" hidden></label></div>`; }).join('')}</div>
+      <div id="ocrResult"></div>
+    </section>
     <section class="card">
       <div class="scorehead" style="grid-template-columns:1fr 64px 52px 64px"><span>이름</span><span>타수</span><span>핸디</span><span>핸디적용<br>타수</span></div>
       ${order.map(n => {
@@ -794,6 +870,29 @@ function bindAdmin() {
     if (await saveTable('scores', rows)) render();
     else if ($('saveScores')) $('saveScores').disabled = false;
   };
+  // 스코어카드 사진 올리기 → 자동 인식
+  v.querySelectorAll('[data-upload]').forEach(inp => inp.onchange = async () => {
+    const file = inp.files && inp.files[0];
+    if (!file) return;
+    if (DEMO) { toast('체험 모드에서는 사진을 올릴 수 없어요', true); return; }
+    const typed = {};
+    v.querySelectorAll('.scorein').forEach(r => { typed[r.dataset.name] = { g: r.querySelector('.sg').value, h: r.querySelector('.sh').value }; });
+    const box = document.getElementById('ocrResult');
+    if (box) box.innerHTML = '<div class="ocr">⏳ 사진을 올리고 타수를 읽는 중이에요… (30초쯤 걸려요)</div>';
+    v.querySelectorAll('[data-upload]').forEach(x => { x.disabled = true; });
+    try {
+      const b64 = await imageToJpegB64(file, 2000);
+      const j = await post({ pin: adminPin, action: 'uploadScore', day: String(scoreDay), group: inp.dataset.upload, image: b64, mediaType: 'image/jpeg', recognize: true });
+      if (!j.ok) { toast(j.error || '올리지 못했어요', true); if (box) box.innerHTML = ''; v.querySelectorAll('[data-upload]').forEach(x => { x.disabled = false; }); return; }
+      data = normalize(j.data);
+      render();
+      applyOcr(j.result, j.warn, typed);
+    } catch (e) {
+      toast('올리지 못했어요. 인터넷 연결을 확인해 주세요.', true);
+      if (box) box.innerHTML = '';
+      v.querySelectorAll('[data-upload]').forEach(x => { x.disabled = false; });
+    }
+  });
   // 초기화: 그 일차의 타수만 비우고 라운드별 핸디는 그대로 둠
   if ($('resetScores')) $('resetScores').onclick = async () => {
     if (!(await ask(`${scoreDay}일차 타수를 모두 지울까요? (핸디는 그대로 남아요)`))) return;
@@ -858,6 +957,8 @@ document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = async () =
 document.getElementById('view').addEventListener('click', e => {
   const b = e.target.closest('[data-st]');
   if (b) { scoreTab = b.dataset.st; render(); }
+  const pb = e.target.closest('[data-photos]');
+  if (pb) showPhotos(pb.dataset.photos);
   const sb = e.target.closest('[data-share]');
   if (sb) shareText(buildShare(sb.dataset.share));
 });
