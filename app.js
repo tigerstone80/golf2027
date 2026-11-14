@@ -630,7 +630,7 @@ function adminScores(days) {
       }).join('')}
       <div class="note">타수를 비워 두면 그 라운드는 순위에서 빠져요(불참). 핸디는 멤버 핸디가 기본으로 들어가고, 이 라운드만 바꿀 수도 있어요.</div>
     </section>
-    <div class="savebar"><button class="btn block" id="saveScores">${scoreDay}일차 스코어 저장</button></div>`;
+    <div class="savebar"><button class="btn block" id="saveScores">${scoreDay}일차 스코어 저장</button><button class="btn block danger" id="resetScores" style="margin-top:8px">${scoreDay}일차 스코어 초기화</button></div>`;
 }
 
 function bindAdmin() {
@@ -693,6 +693,14 @@ function bindAdmin() {
     $('saveScores').disabled = true;
     if (await saveTable('scores', rows)) render();
     else if ($('saveScores')) $('saveScores').disabled = false;
+  };
+  // 초기화: 그 일차의 타수만 비우고 라운드별 핸디는 그대로 둠
+  if ($('resetScores')) $('resetScores').onclick = async () => {
+    if (!(await ask(`${scoreDay}일차 타수를 모두 지울까요? (핸디는 그대로 남아요)`))) return;
+    const rows = (data.scores || []).map(s => String(s.day) === String(scoreDay) ? Object.assign({}, s, { gross: '' }) : s);
+    $('resetScores').disabled = true;
+    if (await saveTable('scores', rows)) { render(); toast(`${scoreDay}일차 타수를 초기화했어요`); }
+    else if ($('resetScores')) $('resetScores').disabled = false;
   };
 
   // 일반 표 편집
