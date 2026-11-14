@@ -346,6 +346,27 @@ nav.tabs button.on svg{color:var(--mint)}
 /* 일정: 시간과 내용을 세로 가운데로 */
 .tl li{align-items:center}
 .tl .t{line-height:1.2}
+
+/* 라운딩: 조별 색 상자 + 큰 티타임 */
+.group{background:var(--g-bg,var(--bg));box-shadow:inset 0 0 0 1.5px var(--g-line,transparent)}
+.group.gc1{--g-bg:#E6F6EE;--g-line:#BFE8D3;--g-acc:#12B76A;--g-ink:#062B1A;--g-text:#087443}
+.group.gc2{--g-bg:#EAF1FD;--g-line:#C6D7F7;--g-acc:#2E6BE6;--g-ink:#FFFFFF;--g-text:#1F4FBF}
+.group.gc3{--g-bg:#FFF4E0;--g-line:#F5DDB0;--g-acc:#F2A93B;--g-ink:#3A2300;--g-text:#8A5A00}
+.group.gc4{--g-bg:#F1ECFD;--g-line:#DCD0F8;--g-acc:#7C5CE0;--g-ink:#FFFFFF;--g-text:#5B3FC4}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .group.gc1{--g-bg:#12291F;--g-line:#1F4A36;--g-text:#3DDC97}
+  :root:not([data-theme="light"]) .group.gc2{--g-bg:#14213A;--g-line:#24396A;--g-text:#8DB2FF}
+  :root:not([data-theme="light"]) .group.gc3{--g-bg:#2C2210;--g-line:#4D3A17;--g-text:#F5C26B}
+  :root:not([data-theme="light"]) .group.gc4{--g-bg:#221B38;--g-line:#3B2F63;--g-text:#B9A4FF}
+}
+:root[data-theme="dark"] .group.gc1{--g-bg:#12291F;--g-line:#1F4A36;--g-text:#3DDC97}
+:root[data-theme="dark"] .group.gc2{--g-bg:#14213A;--g-line:#24396A;--g-text:#8DB2FF}
+:root[data-theme="dark"] .group.gc3{--g-bg:#2C2210;--g-line:#4D3A17;--g-text:#F5C26B}
+:root[data-theme="dark"] .group.gc4{--g-bg:#221B38;--g-line:#3B2F63;--g-text:#B9A4FF}
+.group .g{margin-bottom:8px}
+.group .g b{display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:14px}
+.gname{display:inline-block;background:var(--g-acc,var(--navy));color:var(--g-ink,#fff);border-radius:8px;padding:2px 10px;font-size:14px;font-weight:800}
+.group .tee{font-size:19px;font-weight:800;color:var(--g-text,var(--brand))}
 </style>
 </head>
 <body>
@@ -386,7 +407,7 @@ nav.tabs button.on svg{color:var(--mint)}
 <div class="toast" id="toast"></div>
 
 <!-- 파일을 고칠 때마다 v 값을 바꿔야 핸드폰에 예전 파일이 남지 않아요 -->
-<script src="config.js?v=23"></script>
-<script src="app.js?v=23"></script>
+<script src="config.js?v=24"></script>
+<script src="app.js?v=24"></script>
 </body>
 </html>
