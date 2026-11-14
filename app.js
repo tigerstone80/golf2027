@@ -518,7 +518,7 @@ function viewRounds(S, days) {
     return `<section class="card ${tn === d.n ? 'today' : ''}">
       <div class="row between"><h3>${esc(course || '골프장 미정')}</h3><span class="chip gray">${d.n}일차 · ${d.short}</span></div>
       <div class="groups">${rs.map(r => `<div class="group">
-        <div class="g"><b>${esc(r.group || '')}${r.coursePart ? ` · ${esc(r.coursePart)}` : ''}</b><span class="tee">${esc(r.tee || '시간 미정')}</span></div>
+        <div class="g"><b>${esc(r.group || '')}${r.tee ? ` <span class="tee">(${esc(r.tee)})</span>` : ''}${r.coursePart ? ` · ${esc(r.coursePart)}` : ''}</b>${r.tee ? '' : '<span class="tee-none">시간 미정</span>'}</div>
         <div class="names">${splitNames(r.players).map(n => `<span class="name ${n === (store.get(ME_KEY) || '') ? 'me' : ''}">${esc(n)}${hcpOf(n) != null ? `<small>${hcpOf(n)}</small>` : ''}</span>`).join('') || '<span class="meta">조 편성 전</span>'}</div>
         ${r.note ? `<div class="note">${esc(r.note)}</div>` : ''}
       </div>`).join('')}</div>
