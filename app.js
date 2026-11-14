@@ -489,9 +489,16 @@ function evItem(s) {
   return `<li class="${cls}"><div class="t">${esc(s.time)}</div><div>${body}${s.note ? `<div class="n">${esc(s.note)}</div>` : ''}</div></li>`;
 }
 
+// 여행 중이면 오늘 일차를 맨 위로, 지난 일차는 맨 아래로
+function orderDays(days) {
+  const tn = todayN(days);
+  if (!tn) return days;
+  return days.filter(d => d.n >= tn).concat(days.filter(d => d.n < tn));
+}
+
 function viewSchedule(S, days) {
   const tn = todayN(days);
-  return todayCard(days) + days.map(d => {
+  return todayCard(days) + orderDays(days).map(d => {
     const items = (data.schedule || []).filter(s => String(s.day) === String(d.n))
       .sort((a, b) => String(a.time).localeCompare(String(b.time)));
     return `<section class="card ${tn === d.n ? 'today' : ''}">
