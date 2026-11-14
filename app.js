@@ -173,6 +173,25 @@ let draft = null; // 관리자 편집 중인 표 사본
 let draftKey = null;
 let dirty = false;
 let scoreDay = null;
+// 스코어 입력 중인 값(저장 전)을 기기에 임시 보관 → 화면 전환·새로고침 후에도 남음
+const SDRAFT_KEY = 'golf2027.scoreDraft';
+let scoreDraft = (() => { try { return JSON.parse(store.get(SDRAFT_KEY) || '{}') || {}; } catch (e) { return {}; } })();
+function saveScoreDraft() { store.set(SDRAFT_KEY, JSON.stringify(scoreDraft)); }
+// 보던 화면을 주소(#)에 기록 → 새로고침해도 같은 화면
+const TAB_NAMES = ['schedule', 'rounds', 'scores', 'money', 'members', 'admin'];
+function saveNav() {
+  const h = tab === 'scores' ? `scores-${scoreTab}`
+    : tab === 'admin' ? `admin-${adminTab}${adminTab === 'scores' && scoreDay ? '-' + scoreDay : ''}` : tab;
+  try { history.replaceState(null, '', '#' + h); } catch (e) { /* 무시 */ }
+}
+function loadNav() {
+  const p = decodeURIComponent((location.hash || '').slice(1)).split('-');
+  if (!TAB_NAMES.includes(p[0])) return;
+  tab = p[0];
+  if (tab === 'scores' && p[1]) scoreTab = p[1];
+  if (tab === 'admin' && p[1] && ADMIN_TABS.some(a => a[0] === p[1])) adminTab = p[1];
+  if (tab === 'admin' && adminTab === 'scores' && p[2]) scoreDay = num(p[2]);
+}
 
 function normalize(d) {
   const o = {};
@@ -372,6 +391,7 @@ function render() {
   v.innerHTML = fn(S, days);
   if (tab === 'admin') bindAdmin();
   if (tab === 'schedule') { const ms = document.getElementById('meSel'); if (ms) ms.onchange = () => { store.set(ME_KEY, ms.value); render(); }; }
+  saveNav();
 }
 
 function todayN(days) {
@@ -791,12 +811,14 @@ function adminScores(days) {
       <div class="photo-slots">${pGroups.map(g => { const p = photoOf(g); return `<div class="pslot">${p ? `<img src="${photoUrl(p.fileId, 400)}" alt="${esc(g)} 스코어카드">` : '<div class="pempty">사진 없음</div>'}<label class="btn small ghost">${p ? esc(g) + ' 다시 올리기' : esc(g) + ' 사진 올리기'}<input type="file" accept="image/*" data-upload="${esc(g)}" hidden></label></div>`; }).join('')}</div>
       <div id="ocrResult"></div>
     </section>
+    ${Object.keys(scoreDraft[scoreDay] || {}).length ? '<div class="banner">저장하지 않은 입력이 있어요. 확인한 뒤 아래 저장을 눌러 주세요.</div>' : ''}
     <section class="card">
       <div class="scorehead" style="grid-template-columns:1fr 64px 52px 64px"><span>이름</span><span>타수</span><span>핸디</span><span>핸디적용<br>타수</span></div>
       ${order.map(n => {
         const e = existing[n];
-        const g = e ? e.gross : '';
-        const h = e && has(e.hcp) ? num(e.hcp) : memHcp(n);
+        const d = (scoreDraft[scoreDay] || {})[n];
+        const g = d ? d.g : (e ? e.gross : '');
+        const h = d && has(d.h) ? num(d.h) : (e && has(e.hcp) ? num(e.hcp) : memHcp(n));
         return `<div class="scorein" data-name="${esc(n)}" style="grid-template-columns:1fr 64px 52px 64px">
           <div><b>${esc(n)}</b>${groupOf[n] ? ` <span class="chip gray">${esc(groupOf[n])}</span>` : ' <span class="chip gray">불참?</span>'}</div>
           <input class="inp sg" inputmode="numeric" value="${esc(g)}" placeholder="-">
@@ -857,6 +879,9 @@ function bindAdmin() {
     const upd = () => {
       const g = rowEl.querySelector('.sg').value, h = num(rowEl.querySelector('.sh').value);
       rowEl.querySelector('.nt').textContent = has(g) ? num(g) - h : '-';
+      scoreDraft[scoreDay] = scoreDraft[scoreDay] || {};
+      scoreDraft[scoreDay][rowEl.dataset.name] = { g: rowEl.querySelector('.sg').value, h: rowEl.querySelector('.sh').value };
+      saveScoreDraft();
     };
     rowEl.querySelectorAll('input').forEach(i => i.oninput = upd);
   });
@@ -867,7 +892,7 @@ function bindAdmin() {
       if (has(g)) rows.push({ day: String(scoreDay), name: rowEl.dataset.name, gross: String(num(g)), hcp: String(num(rowEl.querySelector('.sh').value)) });
     });
     $('saveScores').disabled = true;
-    if (await saveTable('scores', rows)) render();
+    if (await saveTable('scores', rows)) { delete scoreDraft[scoreDay]; saveScoreDraft(); render(); }
     else if ($('saveScores')) $('saveScores').disabled = false;
   };
   // 스코어카드 사진 올리기 → 자동 인식
@@ -895,10 +920,17 @@ function bindAdmin() {
   });
   // 초기화: 그 일차의 타수만 비우고 라운드별 핸디는 그대로 둠
   if ($('resetScores')) $('resetScores').onclick = async () => {
-    if (!(await ask(`${scoreDay}일차 타수를 모두 지울까요? (핸디는 그대로 남아요)`))) return;
+    if (!(await ask(`${scoreDay}일차 타수와 스마트스코어 사진을 모두 지울까요? (핸디는 그대로 남아요)`))) return;
     const rows = (data.scores || []).map(s => String(s.day) === String(scoreDay) ? Object.assign({}, s, { gross: '' }) : s);
     $('resetScores').disabled = true;
-    if (await saveTable('scores', rows)) { render(); toast(`${scoreDay}일차 타수를 초기화했어요`); }
+    if (await saveTable('scores', rows)) {
+      delete scoreDraft[scoreDay]; saveScoreDraft();
+      const ph = (data.photos || []).filter(p => String(p.day) === String(scoreDay));
+      for (const p of ph) {
+        try { const j = await post({ pin: adminPin, action: 'deletePhoto', day: String(scoreDay), group: p.group }); if (j.ok && j.data) data = normalize(j.data); } catch (e) { /* 다음 사진 계속 */ }
+      }
+      render(); toast(`${scoreDay}일차 타수${ph.length ? '와 사진' : ''}을 초기화했어요`);
+    }
     else if ($('resetScores')) $('resetScores').disabled = false;
   };
 
@@ -968,6 +1000,7 @@ document.getElementById('refresh').onclick = async () => {
 };
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !dirty && !DEMO) loadData(false); });
 
+loadNav();
 const cached = store.get(CACHE_KEY);
 if (!DEMO && cached) { try { data = normalize(JSON.parse(cached)); render(); } catch (e) { /* 무시 */ } }
 loadData(false);
