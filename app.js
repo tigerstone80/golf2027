@@ -422,7 +422,7 @@ function todayCard(days) {
   const me = store.get(ME_KEY) || '';
   const members = (data.members || []).filter(m => m.name);
   const mine = me ? groups.find(r => splitNames(r.players).includes(me)) : null;
-  const line = (tag, list, empty) => `<div class="tc-line">${tag}<div>${list.length ? list.map(s => `<div><b>${esc(s.content || empty)}</b>${s.time ? ` <span class="meta">${esc(s.time)}</span>` : ''}</div>`).join('') : `<span class="meta">${empty}</span>`}</div></div>`;
+  const line = (tag, list, empty) => `<div class="tc-line">${tag}<div>${list.length ? list.map(s => `<div><b>${esc(s.content || empty)}</b>${s.type === '라운딩' && has(s.note) ? ` <span class="fee">(${won(num(s.note))})</span>` : ''}${s.time ? ` <span class="meta">${esc(s.time)}</span>` : ''}</div>`).join('') : `<span class="meta">${empty}</span>`}</div></div>`;
   return `<section class="card todaycard">
     <div class="row between"><h3>${title}</h3><span class="chip">${n}일차 · ${d.short}</span></div>
     <div class="tc-me"><span>나는</span><select id="meSel"><option value="">이름 선택</option>${members.map(m => `<option ${m.name === me ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></div>
@@ -483,10 +483,10 @@ const EV_TYPES = ['라운딩', '숙소', '기타'];
 function evItem(s) {
   const ty = EV_TYPES.includes(s.type) ? s.type : '기타';
   const cls = ty === '라운딩' ? 'ev-round' : ty === '숙소' ? 'ev-stay' : '';
-  const body = ty === '라운딩' ? `<span class="evtag round">⛳ 라운딩</span><b>${esc(s.content || '골프장 미정')}</b>`
+  const body = ty === '라운딩' ? `<span class="evtag round">⛳ 라운딩</span><b>${esc(s.content || '골프장 미정')}</b>${has(s.note) ? ` <span class="fee">(${won(num(s.note))})</span>` : ''}`
     : ty === '숙소' ? `<span class="evtag stay">🏨 숙소</span><b>${esc(s.content || '장소 미정')}</b>`
     : esc(s.content);
-  return `<li class="${cls}"><div class="t">${esc(s.time)}</div><div>${body}${s.note ? `<div class="n">${esc(s.note)}</div>` : ''}</div></li>`;
+  return `<li class="${cls}"><div class="t">${esc(s.time)}</div><div>${body}${s.note && ty !== '라운딩' ? `<div class="n">${esc(s.note)}</div>` : ''}</div></li>`;
 }
 
 // 여행 중이면 오늘 일차를 맨 위로, 지난 일차는 맨 아래로
@@ -671,7 +671,7 @@ const EDITORS = {
       { k: 'day', l: '일차', t: 'day', w: 1 }, { k: 'time', l: '시간', t: 'time', w: 1 },
       { k: 'type', l: '종류', t: 'evtype' },
       { k: 'content', l: r => r.type === '라운딩' ? '골프장 이름' : r.type === '숙소' ? '숙소 장소' : '내용', ph: r => r.type === '라운딩' ? '예) 포항CC' : r.type === '숙소' ? '예) 포항 에이원호텔' : '예) 저녁식사' },
-      { k: 'note', l: '비고 (메모)' },
+      { k: 'note', l: r => r.type === '라운딩' ? '1인당 그린피(원)' : '비고 (메모)', ph: r => r.type === '라운딩' ? '예) 310000' : '', im: r => r.type === '라운딩' ? 'numeric' : '' },
     ],
   },
   rounds: {
@@ -742,7 +742,8 @@ function inputFor(f, row, i, days) {
     return `<div class="pick" data-players="${i}">${(data.members || []).filter(m => m.name).map(m => `<button type="button" data-p="${esc(m.name)}" class="${sel.includes(m.name) ? 'on' : ''}">${esc(m.name)}</button>`).join('')}</div>`;
   }
   const ph = typeof f.ph === 'function' ? f.ph(row) : (f.ph || '');
-  return `<input class="inp" type="text" ${a} value="${esc(v)}" placeholder="${esc(ph)}">`;
+  const im = typeof f.im === 'function' ? f.im(row) : (f.im || '');
+  return `<input class="inp" type="text" ${a} value="${esc(v)}" placeholder="${esc(ph)}"${im ? ` inputmode="${im}"` : ''}>`;
 }
 
 function adminTable(key, days) {
