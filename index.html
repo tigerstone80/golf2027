@@ -107,6 +107,19 @@ main{padding-top:14px}
 .maps a{font-size:12.5px;font-weight:700;text-decoration:none;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:3px 9px}
 .name.me{border-color:var(--gold);background:var(--gold-soft);font-weight:700}
 .sharebtn{margin-top:12px}
+.photo-slots{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pslot{display:grid;gap:6px}
+.pslot img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+.pempty{aspect-ratio:3/2;border:1px dashed var(--line);border-radius:10px;display:grid;place-items:center;color:var(--muted);font-size:13px}
+.pslot label{text-align:center;cursor:pointer}
+.ocr{margin-top:10px;background:var(--brand-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.ocr ul{margin:6px 0 0;padding-left:18px}
+.sg.auto{border-color:var(--brand);background:var(--brand-soft)}
+.photomodal{place-items:start center;overflow-y:auto}
+.photomodal .pbox{background:var(--card);border-radius:18px;padding:14px;width:100%;max-width:560px}
+.photomodal figure{margin:12px 0 0}
+.photomodal figcaption{font-weight:800;margin-bottom:6px}
+.photomodal img{width:100%;border-radius:10px;border:1px solid var(--line);display:block}
 .golfline{margin-top:10px;background:var(--brand-soft);border-radius:12px;padding:8px 12px;font-size:13.5px;color:var(--brand);font-weight:700}
 
 /* 라운딩 조편성 */
@@ -250,7 +263,7 @@ textarea.inp{min-height:70px;resize:vertical}
 <div class="toast" id="toast"></div>
 
 <!-- 파일을 고칠 때마다 v 값을 바꿔야 핸드폰에 예전 파일이 남지 않아요 -->
-<script src="config.js?v=10"></script>
-<script src="app.js?v=10"></script>
+<script src="config.js?v=11"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>
