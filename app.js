@@ -411,9 +411,7 @@ function todayCard(days) {
   if (!days.length) return '';
   const t = new Date(); t.setHours(0, 0, 0, 0);
   let n = todayN(days), title = '☀️ 오늘';
-  if (!n) {
-    if (t < days[0].date) { n = 1; title = '👀 첫날 미리보기'; } else return '';
-  }
+  if (!n) return ''; // 여행 기간에만 '오늘' 카드 표시 (첫날 미리보기 없음)
   const d = days.find(x => x.n === n);
   const items = (data.schedule || []).filter(s => String(s.day) === String(n)).sort((a, b) => String(a.time).localeCompare(String(b.time)));
   const golf = items.filter(s => s.type === '라운딩');
