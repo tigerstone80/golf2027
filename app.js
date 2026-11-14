@@ -615,11 +615,10 @@ function viewMoney(S) {
       <button class="btn ghost block sharebtn" data-share="money">📤 경비 현황 공유</button>
     </section>
 
-    <div class="sect-title">회비 납부 현황 · 1인 ${won(m.fee)}</div>
+    <div class="sect-title">지출 내역 (${ex.length}건)</div>
     <section class="card"><ul class="list">
-      ${m.settle.map(p => `<li><div class="l"><b>${esc(p.name)}</b><small>${won(p.paid)} 납부</small></div><div class="r">${p.unpaid > 0 ? `<span class="chip red">미납 ${won(p.unpaid)}</span>` : '<span class="chip">완납</span>'}</div></li>`).join('') || '<li class="empty">멤버 미등록</li>'}
-    </ul>
-    ${m.duesExpected ? `<div class="note">예정 회비 ${won(m.duesExpected)} 중 ${won(m.duesPaid)} 납부</div>` : ''}</section>
+      ${ex.map(e => `<li><div class="l"><b>${esc(e.content || e.category)}</b><small>${esc(e.date)} · ${esc(e.category)}${e.note ? ' · ' + esc(e.note) : ''}</small></div><div class="r minus">−${won(num(e.amount))}</div></li>`).join('') || '<li class="empty" style="display:block">아직 지출이 없어요</li>'}
+    </ul></section>
 
     ${(data.sponsors || []).length ? `<div class="sect-title">찬조</div><section class="card"><ul class="list">
       ${(data.sponsors || []).map(s => `<li><div class="l"><b>${esc(s.name)}</b><small>${esc(s.note || '감사합니다 🙏')}</small></div><div class="r plus">+${won(num(s.amount))}</div></li>`).join('')}
@@ -629,10 +628,11 @@ function viewMoney(S) {
       ${cats.map(([c, v]) => `<div class="catbar"><span>${esc(c)}</span><div class="b"><i style="width:${(v / maxCat) * 100}%"></i></div><b>${won(v)}</b></div>`).join('')}
     </section>` : ''}
 
-    <div class="sect-title">지출 내역 (${ex.length}건)</div>
+    <div class="sect-title">회비 납부 현황 · 1인 ${won(m.fee)}</div>
     <section class="card"><ul class="list">
-      ${ex.map(e => `<li><div class="l"><b>${esc(e.content || e.category)}</b><small>${esc(e.date)} · ${esc(e.category)}${e.note ? ' · ' + esc(e.note) : ''}</small></div><div class="r minus">−${won(num(e.amount))}</div></li>`).join('') || '<li class="empty" style="display:block">아직 지출이 없어요</li>'}
-    </ul></section>
+      ${m.settle.map(p => `<li><div class="l"><b>${esc(p.name)}</b><small>${won(p.paid)} 납부</small></div><div class="r">${p.unpaid > 0 ? `<span class="chip red">미납 ${won(p.unpaid)}</span>` : '<span class="chip">완납</span>'}</div></li>`).join('') || '<li class="empty">멤버 미등록</li>'}
+    </ul>
+    ${m.duesExpected ? `<div class="note">예정 회비 ${won(m.duesExpected)} 중 ${won(m.duesPaid)} 납부</div>` : ''}</section>
 
     ${m.spent > 0 ? `<div class="sect-title">예상 정산 (지출 − 찬조) ÷ ${m.count}명 = 1인 ${won(m.share)}</div>
     <section class="card"><ul class="list">
