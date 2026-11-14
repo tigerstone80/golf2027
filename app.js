@@ -371,9 +371,8 @@ function render() {
   document.title = S.title || '2027 골프여행';
   document.getElementById('title').textContent = S.title || '2027 골프여행';
   const first = days[0], last = days[days.length - 1];
-  const tdn = todayN(days);
-  document.getElementById('subtitle').innerHTML =
-    `${tdn ? days[tdn - 1].label : (first ? first.short + (last && last !== first ? ' ~ ' + last.short : '') : '')}<br>${esc(S.place || '장소 미정')} · ${days.length}일 일정`;
+  document.getElementById('subtitle').textContent =
+    first ? first.short + (last && last !== first ? ' ~ ' + last.short : '') : '';
   let extra = '';
   const today = new Date(); today.setHours(0, 0, 0, 0);
   if (first) {
