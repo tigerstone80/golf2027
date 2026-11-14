@@ -284,6 +284,7 @@ function render() {
   const fn = { schedule: viewSchedule, rounds: viewRounds, scores: viewScores, money: viewMoney, members: viewMembers, admin: viewAdmin }[tab];
   v.innerHTML = fn(S, days);
   if (tab === 'admin') bindAdmin();
+  if (tab === 'schedule') { const ms = document.getElementById('meSel'); if (ms) ms.onchange = () => { store.set(ME_KEY, ms.value); render(); }; }
 }
 
 function todayN(days) {
@@ -297,6 +298,87 @@ function roundsOf(day) {
     .sort((a, b) => String(a.tee).localeCompare(String(b.tee)) || String(a.group).localeCompare(String(b.group), 'ko'));
 }
 
+// ───────── 오늘 요약 · 길찾기 · 공유 ─────────
+const ME_KEY = 'golf2027.me';
+function mapLinks(q) {
+  q = String(q || '').trim();
+  if (!q || /미정/.test(q)) return '';
+  const e = encodeURIComponent(q);
+  return `<div class="maps"><a href="https://map.kakao.com/link/search/${e}" target="_blank" rel="noopener">📍 카카오맵</a><a href="https://map.naver.com/p/search/${e}" target="_blank" rel="noopener">📍 네이버지도</a></div>`;
+}
+
+function todayCard(days) {
+  if (!days.length) return '';
+  const t = new Date(); t.setHours(0, 0, 0, 0);
+  let n = todayN(days), title = '☀️ 오늘';
+  if (!n) {
+    if (t < days[0].date) { n = 1; title = '👀 첫날 미리보기'; } else return '';
+  }
+  const d = days.find(x => x.n === n);
+  const items = (data.schedule || []).filter(s => String(s.day) === String(n)).sort((a, b) => String(a.time).localeCompare(String(b.time)));
+  const golf = items.filter(s => s.type === '라운딩');
+  const stay = items.filter(s => s.type === '숙소');
+  const groups = roundsOf(n).filter(r => splitNames(r.players).length);
+  const me = store.get(ME_KEY) || '';
+  const members = (data.members || []).filter(m => m.name);
+  const mine = me ? groups.find(r => splitNames(r.players).includes(me)) : null;
+  const line = (tag, list, empty) => `<div class="tc-line">${tag}<div>${list.length ? list.map(s => `<div><b>${esc(s.content || empty)}</b>${s.time ? ` <span class="meta">${esc(s.time)}</span>` : ''}${mapLinks(s.content)}</div>`).join('') : `<span class="meta">${empty}</span>`}</div></div>`;
+  return `<section class="card todaycard">
+    <div class="row between"><h3>${title}</h3><span class="chip">${n}일차 · ${d.short}</span></div>
+    <div class="tc-me"><span>나는</span><select id="meSel"><option value="">이름 선택</option>${members.map(m => `<option ${m.name === me ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></div>
+    ${mine ? `<div class="tc-mine">내 조 <b>${esc(mine.group || '')}</b> · 티타임 <b>${esc(mine.tee || '미정')}</b><br><span class="meta">함께: ${splitNames(mine.players).filter(x => x !== me).map(esc).join(', ') || '-'}</span></div>` : ''}
+    <div class="tc-sec">
+      ${line('<span class="evtag round">⛳ 라운딩</span>', golf, '골프장 미정')}
+      ${groups.map(r => `<div class="tc-group ${r === mine ? 'mine' : ''}"><b>${esc(r.group || '')}</b><span class="tee">${esc(r.tee || '시간 미정')}</span><span>${splitNames(r.players).map(esc).join(', ')}</span></div>`).join('')}
+      ${line('<span class="evtag stay">🏨 숙소</span>', stay, '숙소 미정')}
+    </div>
+  </section>`;
+}
+
+async function shareText(text) {
+  if (navigator.share) {
+    try { await navigator.share({ text }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+    ta.remove();
+  }
+  toast(ok ? '복사했어요. 단톡방에 붙여넣으세요' : '복사하지 못했어요', !ok);
+}
+
+function buildShare(kind) {
+  const S = settingsMap(data);
+  const title = S.title || '2027 골프여행';
+  const link = location.href.split('#')[0].split('?')[0];
+  const medal = r => r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : `${r.rank}.`;
+  const lines = [];
+  if (kind === 'day') {
+    const days = tripDays(S);
+    const d = days.find(x => String(x.n) === String(scoreTab)) || days[0];
+    const course = [...new Set(roundsOf(d.n).map(r => r.course).filter(c => c && c !== '미정'))].join(', ');
+    lines.push(`[${title}] ${d.n}일차 결과 (${d.short}${course ? ' · ' + course : ''})`);
+    dayResults(data, d.n).forEach(r => lines.push(`${medal(r)} ${r.name} ${r.gross}타 - 핸디 ${r.hcp} = ${r.net}`));
+  } else if (kind === 'all') {
+    const o = overallResults(data);
+    lines.push(`[${title}] 종합 순위 (${o.playedDays}라운드 진행)`);
+    o.ranked.forEach(r => lines.push(`${medal(r)} ${r.name} 평균 핸디적용 ${f1(r.avgNet)} (평균 ${f1(r.avgGross)}타 · ${r.cnt}R)`));
+  } else {
+    const m = moneySummary(data);
+    lines.push(`[${title}] 경비 현황`);
+    lines.push(`남은 회비 ${won(m.balance)}`);
+    lines.push(`수입 ${won(m.income)} (회비 ${won(m.duesPaid)} + 찬조 ${won(m.sponsor)})`);
+    lines.push(`지출 ${won(m.spent)}`);
+    const unpaid = m.settle.filter(p => p.unpaid > 0);
+    if (unpaid.length) lines.push(`미납: ${unpaid.map(p => `${p.name} ${won(p.unpaid)}`).join(', ')}`);
+    if (m.spent > 0) lines.push(`예상 1인 부담 ${won(m.share)}`);
+  }
+  lines.push('', link);
+  return lines.join('\n');
+}
+
 const EV_TYPES = ['라운딩', '숙소', '기타'];
 function evItem(s) {
   const ty = EV_TYPES.includes(s.type) ? s.type : '기타';
@@ -304,12 +386,12 @@ function evItem(s) {
   const body = ty === '라운딩' ? `<span class="evtag round">⛳ 라운딩</span><b>${esc(s.content || '골프장 미정')}</b>`
     : ty === '숙소' ? `<span class="evtag stay">🏨 숙소</span><b>${esc(s.content || '장소 미정')}</b>`
     : esc(s.content);
-  return `<li class="${cls}"><div class="t">${esc(s.time)}</div><div>${body}${s.note ? `<div class="n">${esc(s.note)}</div>` : ''}</div></li>`;
+  return `<li class="${cls}"><div class="t">${esc(s.time)}</div><div>${body}${s.note ? `<div class="n">${esc(s.note)}</div>` : ''}${ty !== '기타' ? mapLinks(s.content) : ''}</div></li>`;
 }
 
 function viewSchedule(S, days) {
   const tn = todayN(days);
-  return days.map(d => {
+  return todayCard(days) + days.map(d => {
     const items = (data.schedule || []).filter(s => String(s.day) === String(d.n))
       .sort((a, b) => String(a.time).localeCompare(String(b.time)));
     return `<section class="card ${tn === d.n ? 'today' : ''}">
@@ -330,7 +412,7 @@ function viewRounds(S, days) {
       <div class="row between"><h3>${esc(course || '골프장 미정')}</h3><span class="chip gray">${d.n}일차 · ${d.short}</span></div>
       <div class="groups">${rs.map(r => `<div class="group">
         <div class="g"><b>${esc(r.group || '')}${r.coursePart ? ` · ${esc(r.coursePart)}` : ''}</b><span class="tee">${esc(r.tee || '시간 미정')}</span></div>
-        <div class="names">${splitNames(r.players).map(n => `<span class="name">${esc(n)}${hcpOf(n) != null ? `<small>${hcpOf(n)}</small>` : ''}</span>`).join('') || '<span class="meta">조 편성 전</span>'}</div>
+        <div class="names">${splitNames(r.players).map(n => `<span class="name ${n === (store.get(ME_KEY) || '') ? 'me' : ''}">${esc(n)}${hcpOf(n) != null ? `<small>${hcpOf(n)}</small>` : ''}</span>`).join('') || '<span class="meta">조 편성 전</span>'}</div>
         ${r.note ? `<div class="note">${esc(r.note)}</div>` : ''}
       </div>`).join('')}</div>
     </section>`;
@@ -375,6 +457,7 @@ function viewScores(S, days) {
         ${o.rest.filter(r => r.cnt > 0).map(r => `<tr class="out"><td class="rk">–</td><td class="nm">${esc(r.name)}<span class="sub2">${o.need}라운드 미만 · 순위 제외</span></td><td>${r.cnt}</td><td>${f1(r.avgGross)}</td><td>${f1(r.avgNet)}</td></tr>`).join('')}
         </tbody></table>
         <div class="note">순위 = 평균 핸디적용타수(타수 − 핸디) 낮은 순 · 같으면 평균 타수 낮은 순 · ${o.need}라운드 이상 참가자만 순위에 포함</div>
+        <button class="btn ghost block sharebtn" data-share="all">📤 종합 순위 공유</button>
       </section>
       <section class="card">
         <h3 style="margin-bottom:6px">일자별 타수</h3>
@@ -401,6 +484,7 @@ function viewScores(S, days) {
       ${rows.map(r => `<tr><td class="rk">${medal(r.rank)}</td><td class="nm">${esc(r.name)}</td><td>${r.gross}</td><td>${r.hcp}</td><td class="net">${r.net}</td></tr>`).join('')}
       </tbody></table>` : '<div class="empty">아직 입력된 스코어가 없어요</div>'}
       ${missing.length && rows.length ? `<div class="note">미입력: ${missing.map(esc).join(', ')}</div>` : ''}
+      ${rows.length ? `<button class="btn ghost block sharebtn" data-share="day">📤 ${d.n}일차 결과 공유</button>` : ''}
     </section>`;
   }
   return seg + body;
@@ -422,6 +506,7 @@ function viewMoney(S) {
         <div class="stat"><span>찬조금</span><b>${won(m.sponsor)}</b></div>
         <div class="stat"><span>지출</span><b class="minus">${won(m.spent)}</b></div>
       </div>
+      <button class="btn ghost block sharebtn" data-share="money">📤 경비 현황 공유</button>
     </section>
 
     <div class="sect-title">회비 납부 현황 · 1인 ${won(m.fee)}</div>
@@ -754,6 +839,8 @@ document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = async () =
 document.getElementById('view').addEventListener('click', e => {
   const b = e.target.closest('[data-st]');
   if (b) { scoreTab = b.dataset.st; render(); }
+  const sb = e.target.closest('[data-share]');
+  if (sb) shareText(buildShare(sb.dataset.share));
 });
 document.getElementById('refresh').onclick = async () => {
   if (dirty && !(await ask('저장하지 않은 변경이 있어요. 새로고침할까요?'))) return;
