@@ -4,7 +4,7 @@
 
 // ───────── 표 정의 (apps-script/Code.gs 의 TABLES 와 키가 같아야 함) ─────────
 const TABLE_KEYS = ['settings', 'members', 'schedule', 'rounds', 'scores', 'sponsors', 'expenses', 'photos'];
-const CATEGORIES = ['골프장', '숙소', '차량', '식사', '캐디피·카트비', '시상·기념품', '기타'];
+const CATEGORIES = ['골프장(그린피, 카트비)', '골프장(캐디피)', '식사비', '차량 및 주유비', '숙소비', '기타'];
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 
 // ───────── 처음 데이터 (멤버·장소 미정: 가상의 8명 A~H) ─────────
@@ -689,7 +689,7 @@ const EDITORS = {
   },
   expenses: {
     label: r => `${r.date || ''} ${r.content || r.category || '새 지출'}`,
-    blank: () => ({ date: '', category: '식사', content: '', amount: '', note: '' }),
+    blank: () => ({ date: '', category: '식사비', content: '', amount: '', note: '' }),
     sort: (a, b) => String(b.date).localeCompare(String(a.date)),
     fields: [
       { k: 'date', l: '날짜', t: 'date', w: 1 }, { k: 'category', l: '분류', t: 'cat', w: 1 },
